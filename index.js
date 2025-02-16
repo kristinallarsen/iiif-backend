@@ -1,10 +1,16 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const cors = require('cors');  // Add this line
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Use the cors middleware
+app.use(cors({
+  origin: 'https://kristinallarsen.github.io'  // Replace with your GitHub Pages URL
+}));
 
 app.use(bodyParser.json());
 
@@ -39,10 +45,4 @@ app.post('/saveCollection', async (req, res) => {
     res.status(200).json({ message: 'Collection saved successfully!', data: response.data });
   } catch (error) {
     console.error('Error saving collection:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Failed to save collection' });
-  }
-});
-
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+    res.status(500).json({ error: 'Failed to
