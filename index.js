@@ -7,16 +7,15 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Use the CORS middleware to enable Cross-Origin Resource Sharing
 app.use(cors({
-  origin: 'https://kristinallarsen.github.io/iiif_gallery/',
+  origin: 'https://kristinallarsen.github.io/iiif_gallery',  // Correct origin for GitHub Pages
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
   optionsSuccessStatus: 200
 }));
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://kristinallarsen.github.io/iiif_gallery/');
+  res.header('Access-Control-Allow-Origin', 'https://kristinallarsen.github.io/iiif_gallery');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   next();
@@ -30,7 +29,7 @@ app.post('/saveCollection', async (req, res) => {
   const { collectionName, collection } = req.body;
   const token = process.env.GITHUB_TOKEN;
   const username = process.env.GITHUB_USERNAME;
-  const repo = 'iiif-collections'; // Your repository name for storing collections
+  const repo = 'iiif-collections';
 
   const path = `collections/${collectionName}.json`;
   const message = `Create collection "${collectionName}"`;
