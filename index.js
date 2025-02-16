@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 
 // Use the cors middleware
 app.use(cors({
-  origin: 'https://kristinallarsen.github.io'  // Replace with your GitHub Pages URL
+  origin: 'https://kristinallarsen.github.io/iiif_gallery/'  // Replace with your GitHub Pages URL
 }));
 
 app.use(bodyParser.json());
