@@ -7,11 +7,20 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Use the CORS middleware to enable Cross-Origin Resource Sharing man
+// Use the CORS middleware to enable Cross-Origin Resource Sharing
 app.use(cors({
   origin: 'https://kristinallarsen.github.io/iiif_gallery/',
-  optionsSuccessStatus: 200  // Some legacy browsers (IE11, various SmartTVs) choke on 204
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+  optionsSuccessStatus: 200
 }));
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://kristinallarsen.github.io/iiif_gallery/');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
 
 app.use(bodyParser.json());
 
