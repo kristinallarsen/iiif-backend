@@ -1,161 +1,48 @@
-let viewer;
+const express = require('express');
+const bodyParser = require('body-parser');
+const axios = require('axios');
+require('dotenv').config();
 
-document.addEventListener('DOMContentLoaded', () => {
-  viewer = OpenSeadragon({
-    id: 'viewer',
-    prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/images/',
-    tileSources: []
-  });
+const app = express();
+const port = process.env.PORT || 3000;
 
-  const queryParams = new URLSearchParams(window.location.search);
-  const title = queryParams.get('title');
-  const manifests = queryParams.get('manifests');
-  
-  if (title) {
-    document.getElementById('page-title').textContent = title;
-    document.getElementById('pageTitle').value = title;
-  }
+app.use(bodyParser.json());
 
-  if (manifests) {
-    const manifestUrlArray = decodeURIComponent(manifests).split(',');
-    manifestUrlArray.forEach((manifest) => addManifestToGallery(manifest.trim()));
-  }
-});
+app.post('/saveCollection', async (req, res) => {
+  const { collectionName, collection } = req.body;
+  const token = process.env.GITHUB_TOKEN;
+  const username = process.env.GITHUB_USERNAME;
+  const repo = 'iiif-collections'; // Your repository name for storing collections
 
-function getMetadataValue(metadata, label) {
-  const item = metadata.find(m => m.label === label);
-  return item ? item.value : null;
-}
+  const path = `collections/${collectionName}.json`;
+  const message = `Create collection "${collectionName}"`;
 
-async function addManifestToGallery(manifestUrl) {
-  try {
-    console.log(`Fetching manifest: ${manifestUrl}`);
-    const response = await fetch(manifestUrl);
+  const content = Buffer.from(JSON.stringify(collection, null, 2)).toString('base64');
 
-    if (!response.ok) {
-      throw new Error(`Network response was not ok: ${response.statusText}`);
-    }
-
-    const manifest = await response.json();
-    console.log('Fetched manifest:', manifest);
-
-    if (!manifest.sequences || !manifest.sequences[0].canvases) {
-      console.error('Invalid manifest structure:', JSON.stringify(manifest, null, 2));
-      throw new Error('Manifest does not contain sequences or canvases in the expected format.');
-    }
-
-    const canvasItems = manifest.sequences[0].canvases;
-    const gallery = document.getElementById('gallery');
-
-    canvasItems.forEach(canvas => {
-      const imageService = canvas.images[0].resource.service;
-      if (!imageService || !imageService['@id']) {
-        console.error('Image service is missing or does not contain an @id field:', canvas);
-        return;
-      }
-
-      const imageUrl = `${imageService['@id']}/full/!200,200/0/default.jpg`;
-      const highResUrl = `${imageService['@id']}/info.json`;
-
-      const metadata = canvas.metadata || [];
-      const title = getMetadataValue(metadata, 'Title') || getMetadataValue(metadata, 'Short Title') || 'No title';
-      const author = getMetadataValue(metadata, 'Author') || 'Unknown author';
-      const date = getMetadataValue(metadata, 'Date') || 'No date';
-      const attribution = manifest.attribution || 'Unknown institution';
-
-      const card = document.createElement('div');
-      card.className = 'card';
-
-      const img = document.createElement('img');
-      img.src = imageUrl;
-      img.alt = title; 
-
-      img.addEventListener('click', () => {
-        viewer.open(highResUrl);
-      });
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'x';
-      deleteBtn.addEventListener('click', () => {
-        const shouldRemove = confirm('Do you want to remove this image from the gallery?');
-        if (shouldRemove) {
-          card.remove();
-        }
-      });
-
-      const titleEl = document.createElement('p');
-      titleEl.textContent = `Title: ${title}`;
-
-      const authorEl = document.createElement('p');
-      authorEl.textContent = `Author: ${author}`;
-
-      const dateEl = document.createElement('p');
-      dateEl.textContent = `Date: ${date}`;
-
-      const attributionEl = document.createElement('p');
-      attributionEl.textContent = `Institution: ${attribution}`;
-
-      card.appendChild(deleteBtn);
-      card.appendChild(img);
-      card.appendChild(titleEl);
-      card.appendChild(authorEl);
-      card.appendChild(dateEl);
-      card.appendChild(attributionEl);
-      gallery.appendChild(card);
-    });
-  } catch (error) {
-    console.error('Error fetching IIIF Manifest:', error);
-    alert(`There was an error fetching the IIIF Manifest: ${error.message}`);
-  }
-}
-
-document.getElementById('addManifest').addEventListener('click', async () => {
-  const manifestUrls = document.getElementById('manifestUrl').value.split(',').map(url => url.trim());
-  if (!manifestUrls.length) {
-    alert('Please enter one or more IIIF Manifest URLs');
-    return;
-  }
-
-  for (const manifestUrl of manifestUrls) {
-    if (manifestUrl) {
-      await addManifestToGallery(manifestUrl);
-    }
-  }
-});
-
-document.getElementById('saveCollection').addEventListener('click', async () => {
-  const title = document.getElementById('pageTitle').value;
-  const collectionName = document.getElementById('collectionName').value;
-  const manifestUrls = Array.from(document.querySelectorAll('#gallery .card img')).map(img => img.src.split('/full/')[0] + '/info.json');
-
-  if (!collectionName) {
-    alert('Please enter a collection name');
-    return;
-  }
-
-  const collection = {
-    title,
-    manifests: manifestUrls
-  };
+  const url = `https://api.github.com/repos/${username}/${repo}/contents/${path}`;
 
   try {
-    const response = await fetch('https://iiif-backend-c7luxrrjj-kristina-liv-larsens-projects.vercel.app/saveCollection', { // Replace with your Vercel URL
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+    const response = await axios.put(
+      url,
+      {
+        message,
+        content
       },
-      body: JSON.stringify({ collectionName, collection })
-    });
+      {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    const result = await response.json();
-    if (response.ok) {
-      alert('Collection saved successfully!');
-    } else {
-      throw new Error(result.error);
-    }
+    res.status(200).json({ message: 'Collection saved successfully!', data: response.data });
   } catch (error) {
-    console.error('Error saving collection:', error);
-    alert('Failed to save collection. Check console for details.');
+    console.error('Error saving collection:', error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Failed to save collection' });
   }
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
