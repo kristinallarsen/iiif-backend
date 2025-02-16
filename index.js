@@ -8,14 +8,14 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: 'https://kristinallarsen.github.io/iiif_gallery',  // Correct origin for GitHub Pages
+  origin: 'https://kristinallarsen.github.io/iiif_gallery/',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
   optionsSuccessStatus: 200
 }));
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://kristinallarsen.github.io/iiif_gallery');
+  res.header('Access-Control-Allow-Origin', 'https://kristinallarsen.github.io/iiif_gallery/');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   next();
@@ -23,7 +23,7 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
-app.options('*', cors()); // Include a preflight OPTIONS request handler
+app.options('*', cors());
 
 app.post('/saveCollection', async (req, res) => {
   const { collectionName, collection } = req.body;
