@@ -21,7 +21,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('IIIF Backend is running!');
@@ -38,7 +38,10 @@ app.post('/saveCollection', async (req, res) => {
   const path = `collections/${collectionName}.json`;
   const message = `Create collection "${collectionName}"`;
 
-  const content = Buffer.from(JSON.stringify(collection, null, 2)).toString('base64');
+  const content = Buffer.from(
+      JSON.stringify({ collectionName }), // Ensure this is valid JSON
+      'utf-8' // Explicit encoding (optional but safe)
+    ).toString('base64');
 
   const url = `https://api.github.com/repos/${username}/${repo}/contents/${path}`;
 
