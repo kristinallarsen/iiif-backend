@@ -23,6 +23,10 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
+app.get('/', (req, res) => {
+  res.send('IIIF Backend is running!');
+});
+
 app.options('*', cors());
 
 app.post('/saveCollection', async (req, res) => {
