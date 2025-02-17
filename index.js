@@ -7,19 +7,28 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: 'https://kristinallarsen.github.io/iiif_gallery/',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
-  optionsSuccessStatus: 200
-}));
+// Enable CORS for specific origin
+const allowedOrigins = [
+  'https://kristinallarsen.github.io' // No trailing slash
+];
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://kristinallarsen.github.io/iiif_gallery/');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (e.g., mobile apps, curl)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'OPTIONS'], // Add OPTIONS for preflight
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  })
+);
 
 app.use(express.json());
 
