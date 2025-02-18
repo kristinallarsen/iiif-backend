@@ -36,6 +36,33 @@ app.get('/', (req, res) => {
   res.send('IIIF Backend is running!');
 });
 
+app.get('/getCollection/:collectionName', async (req, res) => {
+  const { collectionName } = req.params;
+  const token = process.env.GITHUB_TOKEN;
+  const username = process.env.GITHUB_USERNAME;
+  const repo = 'iiif-collections';
+
+  const path = `collections/${collectionName}.json`;
+
+  const url = `https://api.github.com/repos/${username}/${repo}/contents/${path}`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3.raw' // Get raw JSON content
+      }
+    });
+
+    const collectionData = JSON.parse(Buffer.from(response.data.content, 'base64').toString('utf-8'));
+
+    res.status(200).json(collectionData);
+  } catch (error) {
+    console.error('Error retrieving collection:', error.message);
+    res.status(404).json({ error: 'Collection not found' });
+  }
+});
+
 app.options('*', cors());
 
 app.post('/saveCollection', async (req, res) => {
