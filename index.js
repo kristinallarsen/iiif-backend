@@ -39,18 +39,24 @@ app.get('/', (req, res) => {
 app.options('*', cors());
 
 app.post('/saveCollection', async (req, res) => {
-  const { collectionName, collection } = req.body;
+  const { collection } = req.body; // Receive the full collection object
   const token = process.env.GITHUB_TOKEN;
   const username = process.env.GITHUB_USERNAME;
   const repo = 'iiif-collections';
 
-  const path = `collections/${collectionName}.json`;
+  if (!collection || !collection.collectionName) {
+    return res.status(400).json({ error: 'Collection data is missing or invalid' });
+  }
+
+  const collectionName = collection.collectionName; // Extract collection name
+  const path = `collections/${collectionName}.json`; // Path for saving the collection
   const message = `Create collection "${collectionName}"`;
 
+  // Save the full collection data
   const content = Buffer.from(
-      JSON.stringify({ collectionName }), // Ensure this is valid JSON
-      'utf-8' // Explicit encoding (optional but safe)
-    ).toString('base64');
+    JSON.stringify(collection, null, 2), // Ensure the full collection object is saved
+    'utf-8' // Explicit encoding (optional but safe)
+  ).toString('base64');
 
   const url = `https://api.github.com/repos/${username}/${repo}/contents/${path}`;
 
@@ -79,4 +85,5 @@ app.post('/saveCollection', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
 module.exports = app;
