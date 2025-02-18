@@ -54,6 +54,15 @@ app.get('/getCollection/:collectionName', async (req, res) => {
       }
     });
 
+    // Log the response for debugging purposes
+    console.log('Retrieved response from GitHub:', response.data);
+
+    // Make sure to check if response.data and response.data.content are defined
+    if (!response.data || !response.data.content) {
+      return res.status(404).json({ error: 'Collection not found' });
+    }
+
+    // Decode the base64 content from the response
     const collectionData = JSON.parse(Buffer.from(response.data.content, 'base64').toString('utf-8'));
 
     res.status(200).json(collectionData);
