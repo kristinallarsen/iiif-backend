@@ -38,30 +38,34 @@ app.get('/', (req, res) => {
 
 app.get('/getCollection/:collectionName', async (req, res) => {
   const { collectionName } = req.params;
+
+  // Logging the requested collection name for debugging
+  console.log('Requested collection name:', collectionName);
+
   const token = process.env.GITHUB_TOKEN;
   const username = process.env.GITHUB_USERNAME;
   const repo = 'iiif-collections';
-
+  
   const path = `collections/${collectionName}.json`;
   const url = `https://api.github.com/repos/${username}/${repo}/contents/${path}`;
+
+  console.log('Fetching collection from URL:', url); // Log the URL being fetched
 
   try {
     const response = await axios.get(url, {
       headers: {
         'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3.raw' // Get the raw content directly
+        'Accept': 'application/vnd.github.v3.raw'
       }
     });
 
-    // Check if we received a valid response
+    // Check if we got a response and it contains content
     if (!response.data || !response.data.content) {
       return res.status(404).json({ error: 'Collection not found' });
     }
 
-    // Decode the base64 content
     const collectionData = JSON.parse(Buffer.from(response.data.content, 'base64').toString('utf-8'));
-
-    res.status(200).json(collectionData); // Successfully retrieve the collection
+    res.status(200).json(collectionData);
   } catch (error) {
     console.error('Error retrieving collection:', error.message);
     res.status(404).json({ error: 'Collection not found' });
